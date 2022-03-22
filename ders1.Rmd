@@ -23,3 +23,19 @@ head(veriseti)
 tail(veriseti)
 ```
 
+Verisetinin ilk ve son altı (6) satırını gördükten sonra versitesinin yapısına bakmak için `str()` fonksiyonunu ve verisetinin özetini görmek için ise `summary()` fonksiyonunu çalıştırdık.
+
+```{r}
+str(veriseti)
+summary(veriseti)
+```
+
+Verisetimizin içerisindeki `veriseti$Industry`, `veriseti$Inception` ve `veriseti$City` verilerimizi `as.factor()` fonksiyonu ile kendi içlerinde gruplandırdık ve tekrar `<-` komutu ile verilirimizi tekrar atadık.
+
+```{r}
+veriseti$Industry <- as.factor(veriseti$Industry)
+veriseti$Inception <- as.factor(veriseti$Inception)
+veriseti$City <- as.factor(veriseti$City)
+```
+
+Verisetimizin içerisinde bazı verilerimizin tipi, verilerin yazılışı uygun değildi. Verilerimizi uygun hale getirmek için öncelikle `gsub()` fonksiyonu ile verilerimizi temizledik. Daha sonra tekrar verilerimizi `<-` komutu ile atadık. 
