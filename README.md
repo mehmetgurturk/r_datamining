@@ -1,2 +1,5 @@
-# r_datamining
-R Veri Madenciliği Doktora Ders Notları
+##R Veri Madenciliği Doktora Ders Notları
+
+İstanbul Üniversitesi
+
+Ulaştırma ve Lojistik Fakültesi
