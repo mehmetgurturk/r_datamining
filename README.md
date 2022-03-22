@@ -2,4 +2,4 @@
 
 İstanbul Üniversitesi
 
-Ulaştırma ve Lojistik Fakültesi
+Ulaştırma ve Lojistik Fakültesi.
