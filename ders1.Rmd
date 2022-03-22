@@ -1,0 +1,25 @@
+---
+title: "Veri Tipi Belirleme"
+author: "Mehmet Gurturk"
+date: '2022-03-22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Çalışacağımız verisetinin içeri aktarılması için `read.csv()` fonksiyonu kullanılır. 
+İçeri aktaracağımız lokal dosya yolu ya da uzak sunucuda tutulan dosyanın yolu fonskiyonuna girdi olarak verilir.
+
+```{r}
+veriseti <- read.csv("Fin500.csv")
+```
+
+Veriseti yüklendikten sonra verisetinin içeriğini kontrol etmek üzere `head()` ve `tail()` fonsiyonları kullanılır.
+
+```{r}
+head(veriseti) 
+tail(veriseti)
+```
+
