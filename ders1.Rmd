@@ -30,7 +30,7 @@ str(veriseti)
 summary(veriseti)
 ```
 
-Verisetimizin içerisindeki `veriseti$Industry`, `veriseti$Inception` ve `veriseti$City` verilerimizi `as.factor()` fonksiyonu ile kendi içlerinde gruplandırdık ve tekrar `<-` komutu ile verilirimizi tekrar atadık.
+Verisetimizin içerisindeki `veriseti$Industry`, `veriseti$Inception` ve `veriseti$City` verilerimizi `as.factor()` fonksiyonu ile kendi içlerinde gruplandırdık ve tekrar `<-` komutu ile verilirimizi kendi üzerlerine tekrar atadık.
 
 ```{r}
 veriseti$Industry <- as.factor(veriseti$Industry)
@@ -38,4 +38,29 @@ veriseti$Inception <- as.factor(veriseti$Inception)
 veriseti$City <- as.factor(veriseti$City)
 ```
 
-Verisetimizin içerisinde bazı verilerimizin tipi, verilerin yazılışı uygun değildi. Verilerimizi uygun hale getirmek için öncelikle `gsub()` fonksiyonu ile verilerimizi temizledik. Daha sonra tekrar verilerimizi `<-` komutu ile atadık. 
+Verisetimizin içerisinde bazı verilerimizin tipi, verilerin yazılışı uygun değildi. Verilerimizi uygun hale getirmek için öncelikle `gsub()` fonksiyonu ile verilerimizi temizledik. Daha sonra tekrar verilerimizi `<-` komutu ile atadık. Sadece `sub()` komutu ilk sıradaki veriyi değiştirir `gsub()` komutu ise başındaki 'g' yani 'global'den dolayı her argümana bakarak değişim gerçekleştirecek.
+
+Daha sonra Verilerimizin türünü değiştirerek 'numeric' hale dönüştürebilmek için `as.numeric()` fonksiyonunu kullandık. Ve `<-` komutu ile verilirimizi tekrar atama işlemlerini gerçekleştirdik. İşlemleri ilk olarak `veriseti$Expenses` verimize uyguluyoruz.
+
+```{r}
+gsub(" Dollars", "", veriseti$Expenses)
+gsub(",", "", veriseti$Expenses)
+veriseti$Expenses <- as.numeric(veriseti$Expenses)
+```
+
+Daha sonra işlemleri `veriseti$Growth` verimize uyguluyoruz.
+
+```{r}
+gsub("%", "", veriseti$Growth)
+veriseti$Growth <- as.numeric(veriseti$Growth)
+```
+
+Son verimizin içerisinde `$` işareti yer almaktadır. Bu işaret R dili için önem arz ettiğinden dolayı bu işareti kaldırırken yanında özel bir işaret daha kullanmamız gerekmektedir. Bunun için `\\$` şeklinde kullanacağız. Ayrıca verilerimizde kullandığımız fonksiyonları iç içe kullanabiliriz.
+
+```{r}
+gsub("\\$", "", veriseti$Revenue)
+veriseti$Revenue <- as.numeric(gsub(",", "", veriseti$Revenue))
+```
+
+
+
