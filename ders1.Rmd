@@ -62,5 +62,115 @@ gsub("\\$", "", veriseti$Revenue)
 veriseti$Revenue <- as.numeric(gsub(",", "", veriseti$Revenue))
 ```
 
+Missing Value değerleri ile uğraşacağımzıdan dolayı `library(Amelia)` paketini çağırdık.
+
+```{r}
+library(Amelia)
+```
+
+Verisetimizin missingness map'ini çizdirebilmek için `missmap()` komutunu uyguladık.
+
+```{r}
+missmap(veriseti)
+```
+
+Verisetimizin kaç satır ve kaç sütundan meydana geldiğini görebilmek için `dim()` komutunu uyguladık.
+
+```{r}
+dim(veriseti)
+```
+
+Verisetimizde istediğimiz satır ve sütunları `veriseti[]` komutu uyguluyoruz.
+
+```{r}
+veriseti[3,2] #3.satır 2.sütun
+veriseti[3, ] #3.satırın tamamı
+veriseti[ ,2] #2.satırın tamamı
+```
+
+Verisetimizin tam yani NA değer içerip içermediğini görebilmek için `complete.cases()` komutunu uyguluyoruz. Verisetimiz tam yani NA değer yoksa true, NA değer varsa false olarak geri dönüş vermektedir.
+
+```{r}
+complete.cases(veriseti)
+```
+
+Verisetimizdeki NA değerlerinin yer aldığı satırı göstermek için;
+
+```{r}
+veriseti[!complete.cases(veriseti), ] # ! ile incomplete olanları getirdik
+```
+
+Verisetimizde geliri 9 milyon olanları getirmek için;
+
+```{r}
+veriseti$Revenue == 9746272
+```
+
+Verisetimizde geliri 9 milyon olan satırı getirmek için;
+
+```{r}
+veriseti[veriseti$Revenue == 9746272, ]
+```
+
+True'ların yanında NA'lar dönüyor. Bundan kaçınmak için `which()` komutunu kullanıyoruz.
+
+```{r}
+which(veriseti$Revenue == 9746272)
+```
+
+Verisetimizde NA değeri olan satırları getirmek için;
+
+```{r}
+veriseti[is.na(veriseti$Expenses), ]
+```
+
+Verisetimizde çalışan sayısı 45 olan satırı getirmek için;
+
+```{r}
+veriseti[which(veriseti$Employees == 45), ]
+```
+
+verisetimizi yedeklemek için `<-` komutunu kullandık.
+
+```{r}
+backup <- veriseti
+```
+
+Verisetimizde complete olanlar ile tekrar veriseti oluşturmak için;
+
+```{r}
+veriseti <- veriseti[complete.cases(veriseti), ]
+```
+
+Industry verisinde dolu olanlar ile tekrar veriseti oluşturduk.
+
+```{r}
+veriseti <- veriseti[!is.na(veriseti$Industry), ]
+```
+
+Verisetindeki satır numaralarını görmek için `row.names()` komutunu kullandık.
+
+```{r}
+row.names(veriseti)
+```
+
+Verisetimizde 1'den başlayarak tekrar satır numarası atamak için `1:nrow()` komutunu kullandık.
+
+```{r}
+veriseti <- 1:nrow(veriseti)
+```
+
+Kayıp verilerin değiştirilmesi için ilk olarak State sütununda NA olan değerleri çağırdık daha sonra da NA verileri değiştirdik.
+
+```{r}
+veriseti[!complete.cases(veriseti), ]
+veriseti[is.na(veriseti$State), ]
+veriseti[is.na(veriseti$State) & veriseti$City == "New York", ]
+veriseti[is.na(veriseti$State) & veriseti$City == "New York", "State"] <- "NY" #City sütunu New York olan ancak State sütununda NA olan yerlere NY ekledik
+
+veriseti[is.na(veriseti$State) & veriseti$city == "San Francisco"]
+veriseti[is.na(veriseti$State) & veriseti$City == "San Francisco", "State"] <- "CA"
+```
+
 
 
