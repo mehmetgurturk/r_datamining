@@ -93,7 +93,7 @@ med_emp_ret <- median(veriseti[veriseti$Industry == "Retail", "Employees"], na.r
 
 veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Retail", ]
 veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Retail", "Employees"] <- med_emp_ret
-data[3,]
+veriseti[3,]
 
 med_emp_finservices <- median(veriseti[veriseti$Industry == "Financial Services", "Employees"], na.rm = T) 
 veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Financial Services", "Employees"] <- med_emp_finservices
