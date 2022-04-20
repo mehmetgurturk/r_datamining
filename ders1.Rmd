@@ -142,12 +142,6 @@ Verisetimizde complete olanlar ile tekrar veriseti oluşturmak için;
 veriseti <- veriseti[complete.cases(veriseti), ]
 ```
 
-Industry verisinde dolu olanlar ile tekrar veriseti oluşturduk.
-
-```{r}
-veriseti <- veriseti[!is.na(veriseti$Industry), ]
-```
-
 Verisetindeki satır numaralarını görmek için `row.names()` komutunu kullandık.
 
 ```{r}
@@ -163,7 +157,7 @@ veriseti <- 1:nrow(veriseti)
 Kayıp verilerin değiştirilmesi için ilk olarak State sütununda NA olan değerleri çağırdık daha sonra da NA verileri değiştirdik.
 
 ```{r}
-veriseti[!complete.cases(veriseti), ]
+veriseti[!complete.cases(veriseti)]
 veriseti[is.na(veriseti$State), ]
 veriseti[is.na(veriseti$State) & veriseti$City == "New York", ]
 veriseti[is.na(veriseti$State) & veriseti$City == "New York", "State"] <- "NY" #City sütunu New York olan ancak State sütununda NA olan yerlere NY ekledik
@@ -172,5 +166,152 @@ veriseti[is.na(veriseti$State) & veriseti$city == "San Francisco"]
 veriseti[is.na(veriseti$State) & veriseti$City == "San Francisco", "State"] <- "CA"
 ```
 
+Verisetimizde NA değeri olan sütunları tespit ettikten sonra "Employees" sütununda yer alan NA değerleri yerine aynı sütundaki meadian değerini atadık. "Employees" sütunu ile "Industry" sütunnda "Retail" olanları atadık. Daha sonra "Industry" sütununda "Fİnancial Services" olanları atadık.
 
+```{r}
+summary(veriseti$Employees)
+veriseti[is.na(veriseti$Employees), ]
 
+median(veriseti[, "Employees"]) # NA baskın olduğu için sonuç NA çıktı bundan kurultmak için aşağıdaki komutu girdik 
+median(veriseti[, "Employees"], na.rm = T) #NA ya median değerini ata NA'yı dikkate alma
+med_emp_ret <- median(veriseti[veriseti$Industry == "Retail", "Employees"], na.rm = T)
+
+veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Retail", ]
+veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Retail", "Employees"] <- med_emp_ret
+
+med_emp_finservices <- median(veriseti[veriseti$Industry == "Financial Services", "Employees"], na.rm = T) 
+veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Financial Services", "Employees"] <- med_emp_finservices
+```
+
+"Expenses" kolununda NA olan değerleri "Revenue" kolunu "Profit" kolunu dolan verilerden çıkartarak elde ettik.
+
+```{r}
+summary(veriseti)
+head(veriseti,25)
+
+veriseti[is.na(veriseti$Expenses), ]
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), ] #Revenue boş olmaması lazım
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Expenses" ] #expenses kolonunu verecek
+
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Expenses" ] <- veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Revenue" ] - veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Profit" ] 
+```
+
+"Revenue" kolununda NA olan değerleri kolunun ortalamasını NA olan değerlere atayarak elde ettik.
+
+```{r}
+summary(veriseti)
+head(veriseti,25)
+
+veriseti[is.na(veriseti$Revenue), ]
+veriseti[is.na(veriseti$Revenue) & veriseti$Industry == "Construction", ] #Revenue NA olan Industry'ler Construction
+
+mean(veriseti[, "Revenue"])
+mean(veriseti[, "Revenue"], na.rm = T)
+mea_rev <- mean(veriseti[, "Revenue"], na.rm = T)
+
+veriseti[is.na(veriseti$Revenue) & veriseti$Industry == "Construction", "Revenue"] <- mea_rev
+```
+
+Matematiksel işlemler ile çalışacağımızdan dolayı `caret` paketini yükledik. Daha sonra R'da yerleşik veri kümesi olan `iris` veri kümesini çağırdık ve `iris` veri kümesinin yapısını ve özetini ortaya koyduk.
+
+```{r}
+library(caret)
+data(iris)
+str(iris)
+summary(iris[,1:4]) #verisetindeki tüm satırlar ile 1. ve 4. sütunlar arasını aldık. Eğer 1. 3. ve 5. sütunları almak isteseydik C(1,3,5) komutunu uygulayacaktık.
+```
+
+Verisetimizde uygulayacağımız dönüşümler (matematiksel işlemler) için `preProcess` komutunu kullandık ve `preProcess` altındaki `scale` paketini çağırdık.
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("scale")) #Herbir gözlemi standart sapmaya oranladık. 
+print(preProcessParams)
+```
+
+$$
+\frac{x_(i)}{\sigma_(x)}
+$$
+İşlemleri belirli veri kümelerine uygulamak için `predict` komutunu kullandık.
+
+```{r}
+scaled <- predict(preProcessParams, iris[,1:4]) #predict fonksiyonunu dönüştürerek iris 1:4 e yazdırdık.
+summary(scaled)
+```
+
+`preProcess` altındaki `scale` paketini çağırdık ve dönüşüm yaparak yazdırdık.
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("center")) #xi-xmü yaptık
+print(preProcessParams)
+
+centered <-  predict(preProcessParams, iris[,1:4])
+summary(centered)
+```
+
+$$
+x_{i}-\bar{X}_{x}
+$$
+Standardizasyon uygulayabilmek için;
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("center", "scale"))
+print(preProcessParams)
+
+standardized <- predict(preProcessParams, iris[,1:4])
+summary(standardized)
+```
+
+$$
+\frac{x_{i}-\mu{x}}{\sigma_{x}}
+$$
+
+Normalizasyon uygulayabilmek için;
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("range")) 
+print(preProcessParams)
+
+normalized <- predict(preProcessParams, iris[,1:4])
+summary(normalized)
+```
+
+$$
+\frac{x-min\left(x \right )}{max\left(x \right )-min\left(x \right )}
+$$
+`boxcox` dönüşümü, normal olarak dağıtılmamış bir veri kümesini daha normal dağılmış bir veri kümesine dönüştürmek için yaygın olarak kullanılan bir yöntemdir. `boxcox` uygulayabilmek için;
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("BoxCox"))
+print(preProcessParams)
+
+boxcox <- predict(preProcessParams, iris[,1:4])
+summary(boxcox)
+```
+
+$$
+y\left( \lambda \right )=\left\{\begin{matrix}\frac{y^ \lambda -1 }{\lambda}, & if \lambda\neq 0\\ log\left (y  \right ), & if \lambda = 0 \end{matrix}\right.
+$$
+
+`Yeo-Johnson` dönüşümü, normalleştirme dönüşümünü hesaplar. `yeojohnson` uygulabilmek için;
+
+```{r}
+preProcessParams <- preProcess(iris[,1:4], method=c("YeoJohnson"))
+print(preProcessParams)
+
+yeojohnson <- predict(preProcessParams, iris[,1:4])
+summary(yeojohnson)
+```
+
+$$
+\psi \left( \lambda, y \right )=
+
+\left\{\begin{matrix}
+
+({(\lambda +1)^\lambda -1)/\lambda}, & if \lambda\neq 0, y\geq 0\\
+
+log\left (y+1  \right ), & if \lambda = 0, y\geq 0 \\ 
+
+-[(-y+1)^{2-\lambda }-1)]/(2-\lambda), & if \lambda \neq  2, y< 0 \\ 
+
+-log\left (-y+1  \right ), & if \lambda = 2, y< 0\end{matrix}\right.
+$$
