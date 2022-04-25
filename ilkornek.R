@@ -63,7 +63,7 @@ veriseti[!complete.cases(veriseti), ]
 veriseti[is.na(veriseti$Industry), ]
 veriseti[!is.na(veriseti$Industry), ]
 
-veriseti <- veriseti[complete.cases(veriseti), ] #verisetinde complete olanlar ile tekrar veriseti oluştur 
+#veriseti <- veriseti[complete.cases(veriseti), ] #verisetinde complete olanlar ile tekrar veriseti oluştur 
 
 veriseti <- veriseti[!is.na(veriseti$Industry), ] #industry veri setinde dolu olanları tekrar veriseti oluştur
 
@@ -87,8 +87,8 @@ veriseti[veriseti$ID == 84, ]
 summary(veriseti$Employees)
 veriseti[is.na(veriseti$Employees), ]
 
-median(veriseti[, "Employees"])
-median(veriseti[, "Employees"], na.rm = T) #NA ya median değerini ata
+median(veriseti[, "Employees"]) # NA baskın olduğu için sonuç NA çıktı bundan kurultmak için aşağıdaki komutu girdik 
+median(veriseti[, "Employees"], na.rm = T) #NA ya median değerini ata NA'yı dikkate alma
 med_emp_ret <- median(veriseti[veriseti$Industry == "Retail", "Employees"], na.rm = T)
 
 veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Retail", ]
@@ -98,6 +98,76 @@ veriseti[3,]
 med_emp_finservices <- median(veriseti[veriseti$Industry == "Financial Services", "Employees"], na.rm = T) 
 veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Financial Services", "Employees"] <- med_emp_finservices
 
+#receneue için sektröe ortlaması al yazdır expense de median veya aritmetik ortalama bunları summaryden gözlemle için yaz. 
+#profit için de aynısı yap. growth sektör ortalamasını al
+#veriseti <- backup
 
+summary(veriseti)
+head(veriseti,25)
 
-#receneue için sektröe ortlaması al yazdır expense de median veya aritmetik ortalama bunları summaryden gözlemle için yaz. profit için de aynısı yap. growth sektör ortalamasını al
+veriseti[is.na(veriseti$Expenses), ]
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), ] #Revenue boş olmaması lazım
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Expenses" ] #expenses kolonun verecek
+
+veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Expenses" ] <- veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Revenue" ] - veriseti[is.na(veriseti$Expenses) & !is.na(veriseti$Revenue), "Profit" ] 
+
+veriseti[17,]
+######################### Revenue NA olanları düzenledik
+
+summary(veriseti)
+head(veriseti,25)
+
+veriseti[is.na(veriseti$Revenue), ]
+veriseti[is.na(veriseti$Revenue) & veriseti$Industry == "Construction", ] #Revenue NA olan Industry'ler Construction
+mean(veriseti[, "Revenue"])
+mean(veriseti[, "Revenue"], na.rm = T)
+mea_rev <- mean(veriseti[, "Revenue"], na.rm = T)
+veriseti[is.na(veriseti$Revenue) & veriseti$Industry == "Construction", "Revenue"] <- mea_rev
+head(veriseti, 25)
+
+#getwd() # dosyamızın konumunu belirtiyor
+
+library(caret)
+data(iris)
+str(iris)
+summary(iris[,1:4]) #tüm satırların ve 1 ve 4 arasındakileri aldık C(1,3,5) 1. 3. ve 5. sütunları aldık
+#calculate fotoğraf çektim bak
+preProcessParams <- preProcess(iris[,1:4], method=c("scale")) #preProcess altındaki scale'i çağırdık, herbir gözlemi oraki 
+#standart sapmaya oranlıyor. $$ $$ arasına matematik yani latex kodları yazılır. 
+print(preProcessParams)
+
+#herbir değeri standart sapmaya oranlayarak buluyor
+scaled <- predict(preProcessParams, iris[,1:4]) #predict fonskiyonunu iris 1:4 e yaz dedik
+summary(scaled)
+
+preProcessParams <- preProcess(iris[,1:4], method=c("center")) #xi-xmü yapıyor
+print(preProcessParams)
+
+centered <-  predict(preProcessParams, iris[,1:4])
+summary(centered)
+
+preProcessParams <- preProcess(iris[,1:4], method=c("center", "scale")) #standardizasyon yaptık
+print(preProcessParams)
+
+standardized <- predict(preProcessParams, iris[,1:4])
+summary(standardized)
+
+preProcessParams <- preProcess(iris[,1:4], method=c("range")) #normalizasyon yaptık formuülleri yaz
+print(preProcessParams)
+
+normalized <- predict(preProcessParams, iris[,1:4])
+summary(normalized)
+
+preProcessParams <- preProcess(iris[,1:4], method=c("BoxCox"))
+print(preProcessParams)
+
+boxcox <- predict(preProcessParams, iris[,1:4])
+summary(boxcox)
+
+preProcessParams <- preProcess(iris[,1:4], method=c("YeoJohnson"))
+print(preProcessParams)
+
+yeojohnson <- predict(preProcessParams, iris[,1:4])
+summary(yeojohnson)
+
+#haftaya regresyon

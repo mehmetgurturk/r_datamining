@@ -315,3 +315,49 @@ log\left (y+1  \right ), & if \lambda = 0, y\geq 0 \\
 
 -log\left (-y+1  \right ), & if \lambda = 2, y< 0\end{matrix}\right.
 $$
+
+Teniden örnekleme yöntemi için ilk olarak veri setimiz geri çağırdık. Bunun için;
+
+```{r}
+data(iris)
+summary(dataset)
+dataset <- iris
+```
+
+Bootstrap ile 100 örneklem oluşturduk. Bu örneklemin oluşturulması için  yapılması gereken işlemler;
+
+```{r}
+train_control <- trainControl(method="boot", number=100)
+```
+
+Verisetinin %80'ini ayıran komut işlemi için;
+
+```{r}
+split=0.80
+trainIndex <- createDataPartition(iris$Species, p=split, list=FALSE)
+data_train <- iris[ trainIndex, ]
+data_test <- iris[ -trainIndex, ]
+```
+
+Leave One Out Cross Validation yöntemiyle örnekleme yapmak için ilk caret package'ı aktif ettik. Sonrasında örneklem yönteminin komutu yazdık. Bu adımlar aşağıdaki gibi gösterilebilir.
+
+```{r}
+Library(caret)
+data(iris)
+train_control <-trainControl(method="LOOCV")
+```
+
+K-Fold Cross Validation için aşağıdaki adımları yürüttük;
+
+```{r}
+data(iris)
+train_control <- trainControl(method="cv", number=10)
+```
+
+Son olarak Repeated Cross Validations yöntemini uygulamak içinse aşağıdaki adımları uyguladıkİ
+
+```{r}
+data(iris)
+train_control <- trainControl (method="repeatedcv", number=10, repeats=3)
+```
+
