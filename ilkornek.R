@@ -244,4 +244,6 @@ print(mape)
 
 library(DAAG)
 cvResults <- suppressWarnings(CVlm(cars, form.lm = dist ~ speed, m=5, dots = FALSE, seed = 29, legend.pos = "topleft", printit = FALSE, main = "CV Dogrusal Regresyon"));
+#cvelm crossvalidantianlm çağırdı. kullanılacak veristesi carsi, formülü tanımla, 5 grup oluştur, noktaları göstermedik, 5 grubu aynı değerleri bulmak için seed, legenin gösterileceği yer, 
+#5 tane ayrı regresyon modeli oluşturdu  en son olarak makine öğrenmesi yaptı. 
 attr(cvResults, 'ms') # MSE mean squaared error
