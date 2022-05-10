@@ -170,4 +170,78 @@ print(preProcessParams)
 yeojohnson <- predict(preProcessParams, iris[,1:4])
 summary(yeojohnson)
 
-#haftaya regresyon
+#Resampling Methods
+
+data(iris)
+summary(dataset)
+dataset <- iris
+#Bootstrap ile 100 örneklem oluşturur.
+train_control <- trainControl(method="boot", number=100)
+
+#define an 80/20 train-test split of the dataset.
+
+split=0.80
+trainIndex <- createDataPartition(iris$Species, p=split, list=FALSE)
+data_train <- iris[ trainIndex, ]
+data_test <- iris[ -trainIndex, ]
+
+#Leave One Out Cross Validation (LOOCV)
+Library(caret)
+#Load the iris dataset
+data(iris)
+#define training control
+train_control <-trainControl(method="LOOCV")
+
+#k-fold Cross Validation
+
+#load the library
+#Load the iris dataset
+data(iris)
+#define training control
+# k fold => number
+train_control <- trainControl(method="cv", number=10)
+
+#Repeated Cross Validations
+#Load the iris dataset
+data(iris)
+# define training control
+train_control <- trainControl (method="repeatedcv", number=10, repeats=3)
+
+
+head(cars)
+str(cars)
+summary(cars)
+names(cars) # değişken isimleri ile çağıracağımız için kullandık. Verisetindeki headrleri gösteriyor
+
+scatter.smooth(x=cars$speed, y=cars$dist, main="Saçılma Diyagramı") #elimizdeki veri regresyon modele uygun mu diye. versitemizin eğrilsel mi doğrusal mı onun için çizdik
+cor(cars$speed, cars$dist) #korelasyon üretmek için
+GenelModel <- lm(dist ~ speed, data=cars) # lm(bağımlı ve bağımsız değişken) (lm, bağımlı değişken, bağımsız değişken , veristesi)
+print(GenelModel) #tahmini distance aldık. dist^ = -17,579+3,932speed   speed x olduk.
+summary(GenelModel)
+
+AIC(GenelModel) #bilgi kriterleri
+BIC(GenelModel) #bilgi kriiterleri bunları küçük olmasını bekleriz.
+
+
+set.seed(100) #set.seed ile rassal sayıları yani rassal değerleri bulucağız.
+trainingRowIndex <- sample(1:nrow(cars), 0.8*nrow(cars)) #satır index numaralarını, değerlerini oluşturudk. sample fonk. çalıştırdık. 1den nrow kadar veriden yüzde 80'inin rassal olarak seç
+trainingData <- cars[trainingRowIndex, ] #satırlarını al ve tüm sütunlarını al
+testData <- cars[-trainingRowIndex, ]
+
+lmMod <- lm(dist ~ speed, data=trainingData)
+distPred <- predict(lmMod, testData) #test datasında tahmini değerler
+print(distPred)
+summary(lmMod)
+AIC(lmMod)
+
+actuals_preds <- data.frame(cbind(gercek=testData$dist, tahmin=distPred)) #observe ettiğim - tahmin ettiğim data bind = iki vektörü bind ediyor. birleştiryor yani bind ediyor. iki verktörden yeni vektör oluşturma yani birleştirme
+correlation_accuracy <- cor(actuals_preds) #90% korelasyon yani ilişki var mı diye bakıyorz
+head(actuals_preds)
+
+#min_max_accuracy <- mean(apply(actuals_preds, 1, min) / apply(actuals_preds, 1, max))
+mape <- mean(abs(actuals_preds$tahmin - actuals_preds$gercek)/actuals_preds$gercek) #mapenin açılımı min personch error. gerçek değer ile tahmini değerin farkın mutlak değerini alarak gerçek değere oranlıyoruz. hata payını alarak gerçek değere oranlıyor yani. 
+print(mape)
+
+library(DAAG)
+cvResults <- suppressWarnings(CVlm(cars, form.lm = dist ~ speed, m=5, dots = FALSE, seed = 29, legend.pos = "topleft", printit = FALSE, main = "CV Dogrusal Regresyon"));
+attr(cvResults, 'ms') # MSE mean squaared error
