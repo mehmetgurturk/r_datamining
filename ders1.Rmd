@@ -361,3 +361,108 @@ data(iris)
 train_control <- trainControl (method="repeatedcv", number=10, repeats=3)
 ```
 
+`cars` paketinin ilk altı (6) satırını, yapısını ve özetine baktık.
+
+```{r}
+head(cars)
+str(cars)
+summary(cars)
+```
+
+Daha sonra değişkenleri isimleri ile çağıracağımızdan dolayı `names()` fonksiyonunu kullandık.
+
+```{r}
+names(cars)
+```
+
+Verisetinin regresyon modeli uygun olup olmadığını ile eğrisel mi yoksa doğrusal mı olduğunu `scatter.smooth()` kodu ile gösterdik.
+
+```{r}
+scatter.smooth(x=cars$speed, y=cars$dist, main="Saçılma Diyagramı")
+```
+
+Korelasyon üretmek için `cor()` kodunu kullandık.
+
+```{r}
+cor(cars$speed, cars$dist)
+```
+
+Regresyon modelini oluşturmak için `lm()` fonksiyonunu kullandık ve bunu 'GenelModel'e atadık.
+
+```{r}
+GenelModel <- lm(dist ~ speed, data=cars) # lm(bağımlı ve bağımsız değişken) (lm, bağımlı değişken, bağımsız değişken , veriseti)
+```
+
+GenelModel içerisindeki tahmini 'distance'ı almak için `print()` ve daha sonra GenelModel'in özetini görmek için `summary()` komutunu kullandık.
+
+```{r}
+print(GenelModel)
+summary(GenelModel)
+```
+
+Bilgi kriterlerini bulabilmek için `AIC()` ve `BIC()` komutlarını kullandık.
+
+```{r}
+AIC(GenelModel) 
+BIC(GenelModel)
+```
+
+Rassal değerleri bulabilmek için `set.seed()` fonksiyonundan yararlandık.
+
+```{r}
+set.seed(100)
+```
+
+Satır index değerlerini `sample()` fonksiyonu ile oluşturduk ve değerleri 'trainingRowIndex'e atadık.
+
+```{r}
+trainingRowIndex <- sample(1:nrow(cars), 0.8*nrow(cars)) # 1'den n row'a kadar verinin yüzde 80'ini rassal olarak seçtik.
+```
+
+cars verisetindeki daha önce oluşturduğumuz trainingRowIndex satırını ve tüm sütununu 'trainingData'ya atadık.
+
+```{r}
+trainingData <- cars[trainingRowIndex, ] #satırlarını al ve tüm sütunlarını al
+```
+
+'testData'ya 'trainingRowIndex'in tersini atadık.
+
+```{r}
+testData <- cars[-trainingRowIndex, ]
+```
+
+Tekrar Regresyon modelini oluşturmak için `lm()` fonksiyonunu kullandık ve bunu 'lmMod'a atadık. Daha sonra testData'sının tahmini değerlerini `predict()` komutu ile aldık ve `print()` `summary()` ile `ÀIC()` komutları ile verisinin içerisine baktık.
+
+```{r}
+lmMod <- lm(dist ~ speed, data=trainingData)
+distPred <- predict(lmMod, testData) 
+print(distPred)
+summary(lmMod)
+AIC(lmMod)
+```
+
+Gözlemlediğimiz ve tahmin ettiğimiz verileri birleştiriyor (bind). Yani iki vektörü birleştiriyor (bind) ve yeni bir vektör oluşturuyor. Bunun için `data.frame()` fonksiyonundan yararlandık. Ve yeni bulduğumuz vektörü 'actuals_preds'e atadık.
+
+```{r}
+actuals_preds <- data.frame(cbind(gercek=testData$dist, tahmin=distPred)) 
+```
+
+Yeni oluşturduğumuz verimizin korelasyonuna `cor()` fonksiyonu ile bakıyoruz ve bunu 'correlation_accuracy'e atadık.Daha sonra verimizin ilk altı (6) satırına baktık.
+
+```{r}
+correlation_accuracy <- cor(actuals_preds)
+head(actuals_preds)
+```
+
+mape (min personch error) yani gerçek değer ie tahmini değer arasındaki farkın mutlak değerini alarak gerçek değere oranlıyoruz. Diğer bir deyişle hata payını alarak gerçek değere oranlıyoruz. Ve `print()` komutu ile çıktısını alıyoruz.
+
+```{r}
+mape <- mean(abs(actuals_preds$tahmin - actuals_preds$gercek)/actuals_preds$gercek)
+print(mape)
+```
+
+
+
+
+
+
