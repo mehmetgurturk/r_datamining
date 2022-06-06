@@ -247,3 +247,54 @@ cvResults <- suppressWarnings(CVlm(cars, form.lm = dist ~ speed, m=5, dots = FAL
 #cvelm crossvalidantianlm çağırdı. kullanılacak veristesi carsi, formülü tanımla, 5 grup oluştur, noktaları göstermedik, 5 grubu aynı değerleri bulmak için seed, legenin gösterileceği yer, 
 #5 tane ayrı regresyon modeli oluşturdu  en son olarak makine öğrenmesi yaptı. 
 attr(cvResults, 'ms') # MSE mean squaared error
+
+
+library(tidyverse)
+library(caret)
+library(glmnet)
+data(Boston, package = "MASS")
+
+set.seed(1212)
+#test ve eğitim verisetelerini oluştur.
+
+sample_size <- floor(0.75 * nrow(Boston)) #floor yuvarla fonskiyonu.
+training_index <- sample(seq_len(nrow(Boston)), size = sample_size)
+train <- Boston[training_index, ]
+test <- Boston[-training_index, ] #training_index değerleri dışındaki değerleri demek
+
+#Predictor
+x <- model.matrix(medv~., train)[,-1] #med bağımlı diğerleri bağımsız şekilde . -1 ile mev value kolunun çıkartıyor. gözlem değerini kullanmayacağız.
+#Response
+y <- train$medv
+
+#Ridge Regresyon
+
+cv.r <- cv.glmnet(x, y, alpha = 0) #bu bana ridge fonk dedik. bu bana ideali üretti
+cv.r$lambda.min
+model.ridge <- glmnet(x, y, alpha=0, lambda =  cv.r$lambda.min)
+coef(model.ridge) #coeffecient katsayılarıan baktık
+
+x.test.ridge <- model.matrix(medv~., test)[,-1]
+predictions.ridge <- model.ridge %>% predict(x.test.ridge) %>% as.vector() #model ridge çektik, sonra predict değerini aldık, en son vektör olarak yazdı predictions ridge tahmni değerlerini buldu
+data.frame( RMSE.r = RMSE(predictions.ridge, test$medv), Rsquare.r = R2(predictions.ridge, test$medv))
+
+#Lasso Regresyon
+
+cv.l <- cv.glmnet(x, y, alpha=1)
+cv.l$lambda.min
+model.lasso <- glmnet(x, y, alpha=1, lambda =  cv.l$lambda.min)
+coef(model.lasso) #coeffecient katsayılarıan baktık
+
+x.test.lasso <- model.matrix(medv~., test)[,-1]
+predictions.lasso <- model.lasso %>% predict(x.test.lasso) %>% as.vector() #model ridge çektik, sonra predict değerini aldık, en son vektör olarak yazdı predictions ridge tahmni değerlerini buldu
+data.frame( RMSE.l = RMSE(predictions.lasso, test$medv), Rsquare.l = R2(predictions.lasso, test$medv))
+
+#Elastic Net Regresyon
+
+model.net <- train(medv~., data = train, method ="glmnet", trControl = trainControl("cv", number=10), tuneLength=10)
+model.net$bestTune
+
+coef(model.net$finalModel, model.net$bestTune$lambda)
+x.test.net <- model.matrix(medv~., test)[,-1]
+predictions.net <- model.net %>% predict(x.test.net)
+data.frame(RMSE.net=RMSE(predictions.net, test$medv), Rsquare.net=R2(predictions.net, test$medv))

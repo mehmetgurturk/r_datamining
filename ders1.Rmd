@@ -461,8 +461,158 @@ mape <- mean(abs(actuals_preds$tahmin - actuals_preds$gercek)/actuals_preds$gerc
 print(mape)
 ```
 
+Kütüphaneden "Data Analysis and Graphics Using R" `DAAG` paketini çağırdık. `suppressWarnings` komutu ile tüm uyarıları yok saydık ve 5 tane regresyon modeli oluşturarak makina öğrenmesi gerçekleştirdik. `attr` ile br nesnenin belirli niteliklerini aldık.
 
+```{r}
+library(DAAG)
+cvResults <- suppressWarnings(CVlm(cars, form.lm = dist ~ speed, m=5, dots = FALSE, seed = 29, legend.pos = "topleft", printit = FALSE, main = "CV Dogrusal Regresyon"));
+#cvelm ile crossvalidantianlm çağırıldı. cars kullanılacak veristesini tanımladık, formülü tanımlayarak 5 grup oluşturduk, dots ile noktaları göstermedik, 5 grupda da aynı değerleri bulmak için seed'i belirledik, legend.pos ile gösterileceği yeri belirledik, 
+attr(cvResults, 'ms') # ms=squaared error
+``` 
 
+`tidyverse` paketi veri bilimi iş akışından veri görselleştirmeye kadar tüm paketleri içerir. `caret` (Classification and Regression Training) paketi karmaşık regresyon ve sınıflandırma sorunları düzelten ve düzene sokan bir pakettir. `glmnet` paketi  lasso or elastic-net regularization, linear regression, logistic and multinomial regression models, Poisson regression, Cox model, multiple-response Gaussian, and the grouped multinomial regression oluşturmak için uygundur.
 
+```{r}
+library(tidyverse)
+library(caret)
+library(glmnet)
+data(Boston, package = "MASS")
+```
 
+Rastgele fakat sabit verimizi `set.seed` komutu ile oluşturduk.
+
+```{r}
+set.seed(1212)
+```
+
+Test ve eğitim veri setlerimizi oluşturduk.
+
+```{r}
+sample_size <- floor(0.75 * nrow(Boston)) #floor komutu ile sayıları yuvarlıyoruz.
+training_index <- sample(seq_len(nrow(Boston)), size = sample_size)
+train <- Boston[training_index, ]
+test <- Boston[-training_index, ] #training_index değerleri dışındaki değerleri al anlamına gelmektedir.
+```
+
+Modelimizin tahmini ve nihai sonucunu elde etmek için;
+
+```{r}
+#Predictor
+x <- model.matrix(medv~., train)[,-1] #Bağımlı değişkenimiz medv. Diğerleri bağımsız değişkenlerimiz. -1 ile medv value kolununu işlemden çıkartıyoruz. Diğer bir deyişle gözlem değeri kullanılmayacağı için çıkartıyoruz.
+#Response
+y <- train$medv
+```
+
+Ridge Regresyonu bulabilmek için `àlpha=0` değeri olması gerekmektedir.
+
+```{r}
+cv.r <- cv.glmnet(x, y, alpha = 0) #İdeal fonksiyonu ürettik
+cv.r$lambda.min
+model.ridge <- glmnet(x, y, alpha=0, lambda =  cv.r$lambda.min)
+coef(model.ridge) #`coef` komutu ile coeffecient kat sayılarıana baktık
+
+x.test.ridge <- model.matrix(medv~., test)[,-1] #Modelimiz ile ridge'e atadık 
+predictions.ridge <- model.ridge %>% predict(x.test.ridge) %>% as.vector() #Modelin predict değerini aldık ve vektör olarak yazdırdık 
+data.frame( RMSE.r = RMSE(predictions.ridge, test$medv), Rsquare.r = R2(predictions.ridge, test$medv)) #Predictions ridge yani tahmini ridge değerlerini bulduk
+```
+
+Lasso Regresyonunu bulabilmek için `àlpha=1` değeri olması gerekmektedir.
+
+```{r}
+cv.l <- cv.glmnet(x, y, alpha=1) #İdeal fonksiyonu ürettik
+cv.l$lambda.min
+model.lasso <- glmnet(x, y, alpha=1, lambda =  cv.l$lambda.min)
+coef(model.lasso) #`coef` komutu ile coeffecient kat sayılarıana baktık
+
+x.test.lasso <- model.matrix(medv~., test)[,-1] #Modelimiz ile ridge'e atadık 
+predictions.lasso <- model.lasso %>% predict(x.test.lasso) %>% as.vector() #Modelin predict değerini aldık ve vektör olarak yazdırdık 
+data.frame( RMSE.l = RMSE(predictions.lasso, test$medv), Rsquare.l = R2(predictions.lasso, test$medv)) #Predictions lasso yani tahmini lasso değerlerini bulduk
+```
+
+Elastic Net Regresyonu bulabilmek için;
+
+```{r}
+model.net <- train(medv~., data = train, method ="glmnet", trControl = trainControl("cv", number=10), tuneLength=10)
+model.net$bestTune
+coef(model.net$finalModel, model.net$bestTune$lambda) #`coef` komutu ile coeffecient kat sayılarıana baktık
+
+x.test.net <- model.matrix(medv~., test)[,-1] #Modelimiz ile ridge'e atadık 
+predictions.net <- model.net %>% predict(x.test.net) #Modelin predict değerini aldık 
+data.frame(RMSE.net=RMSE(predictions.net, test$medv), Rsquare.net=R2(predictions.net, test$medv)) #Predictions elastic net yani tahmini elastic net değerlerini bulduk
+```
+
+Geleneksel model ile tahmini modeli bulabilmek için;
+
+```{r}
+dataset = read.csv("Mortgage.csv")
+head(dataset) #datasetin ilk değerlerini gördük
+str(dataset) #dataset'in yapısına baktık
+dataset$y = as.factor(dataset$y)
+
+model1 = glm(y~x1+x2, family = "binomial", data = dataset)
+summary(model1) #model1'in özetini kontrol ettik
+
+#Modelimizi test ettik.
+ll.null = model1$null.deviance/-2
+ll.proposed = model1$deviance/-2
+
+R2 = (ll.null - ll.proposed)/ ll.null #Hataların toplamını yani en uygun durumu ifade eder.
+
+#Kendi modelimizi test ettik. Şimdi de kendi modelimizi tahmin edeceğiz.
+
+tahmin = predict(model1, type = "response")
+classification = round(tahmin)
+
+AR  = mean(dataset$y == classification)
+
+#Geleneksel model ile tahmin modelimizi bulduk.
+
+```
+
+`Spam.csv` veri setimizin tahmini modelini bulacağız.
+
+```{r}
+dataset = read.csv("Spam.csv")
+dataset$Spam = as.factor(dataset$Spam)
+str(dataset) #dataset'in yapısına baktık
+
+set.seed(1453) #Rastgele fakat sabit verimizi `set.seed` komutu ile oluşturduk.
+trainingRowIndex = sample(1:nrow(dataset), 0,8*nrow(dataset))
+train = dataset[trainingRowIndex,2:5] #Record kolonu hariç diğer kolanları aldık
+test = dataset[-trainingRowIndex, 2:5] #training_index değerleri dışındaki değerleri aldık.
+
+model2 = glm(Spam~., family = "binomial", data = train)
+summary(model2) #model1'in özetini kontrol ettik
+
+#Modelimizi test ettik.
+ll.null = model2$null.deviance/-2
+ll.proposed = model2$deviance/-2
+
+#Hataların toplamını yani en uygun durumu ifade eder.
+R2 = (ll.null - ll.proposed)/ ll.null
+
+#Kendi modelimizi test ettik. Şimdi de kendi modelimizi tahmin edeceğiz.
+tahmin2 = predict(model2, test, type="response")
+classification = round(tahmin2)
+
+#Tahmin modelimizi bulduk.
+AR = 100*mean(test$Spam == classification)
+```
+
+'traintestdata'sını crossvalidation ile kaç kümeyi bölündüğünü bulacağız.
+
+```{r}
+library(caret)
+dataset = read.csv("Spam.csv")
+dataset = dataset[ ,2:5]
+dataset$Spam = as.factor(dataset$Spam)
+str(dataset)
+
+myControl = trainControl(method = "cv", number = 5) #verisetini 5'e bölerek crossvalidation yapıyoruz.
+
+model3 = train(Spam~., data = dataset, trControl=myControl, method="glm", family=binomial, metric="Accuracy") #crossvalidation'ın rassal olarak etkinlik değerlerini bulduk.
+
+model3
+
+```
 
