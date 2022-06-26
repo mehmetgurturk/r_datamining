@@ -148,12 +148,6 @@ Verisetindeki satır numaralarını görmek için `row.names()` komutunu kulland
 row.names(veriseti)
 ```
 
-Verisetimizde 1'den başlayarak tekrar satır numarası atamak için `1:nrow()` komutunu kullandık.
-
-```{r}
-veriseti <- 1:nrow(veriseti)
-```
-
 Kayıp verilerin değiştirilmesi için ilk olarak State sütununda NA olan değerleri çağırdık daha sonra da NA verileri değiştirdik.
 
 ```{r}
@@ -316,11 +310,11 @@ log\left (y+1  \right ), & if \lambda = 0, y\geq 0 \\
 -log\left (-y+1  \right ), & if \lambda = 2, y< 0\end{matrix}\right.
 $$
 
-Teniden örnekleme yöntemi için ilk olarak veri setimiz geri çağırdık. Bunun için;
+Yeniden örnekleme yöntemi için ilk olarak veri setimiz geri çağırdık. Bunun için;
 
 ```{r}
 data(iris)
-summary(dataset)
+summary(veriseti)
 dataset <- iris
 ```
 
@@ -342,7 +336,7 @@ data_test <- iris[ -trainIndex, ]
 Leave One Out Cross Validation yöntemiyle örnekleme yapmak için ilk caret package'ı aktif ettik. Sonrasında örneklem yönteminin komutu yazdık. Bu adımlar aşağıdaki gibi gösterilebilir.
 
 ```{r}
-Library(caret)
+library(caret)
 data(iris)
 train_control <-trainControl(method="LOOCV")
 ```
@@ -485,29 +479,29 @@ Rastgele fakat sabit verimizi `set.seed` komutu ile oluşturduk.
 set.seed(1212)
 ```
 
-Test ve eğitim veri setlerimizi oluşturduk.
+Test ve eğitim veri setlerimizi oluşturduk. `seq_len` fonskiyonu ile vektör kullanarak dizinler oluşturduk.
 
 ```{r}
-sample_size <- floor(0.75 * nrow(Boston)) #floor komutu ile sayıları yuvarlıyoruz.
+sample_size <- floor(0.75 * nrow(Boston)) #floor komutu ile sayıları yuvarlayarak tam sayı haline çevirdik.
 training_index <- sample(seq_len(nrow(Boston)), size = sample_size)
 train <- Boston[training_index, ]
 test <- Boston[-training_index, ] #training_index değerleri dışındaki değerleri al anlamına gelmektedir.
 ```
 
-Modelimizin tahmini ve nihai sonucunu elde etmek için;
+Model matrisi oluşturmak için `model.matrix()` fonskiyonunu kullandık.
 
 ```{r}
 #Predictor
-x <- model.matrix(medv~., train)[,-1] #Bağımlı değişkenimiz medv. Diğerleri bağımsız değişkenlerimiz. -1 ile medv value kolununu işlemden çıkartıyoruz. Diğer bir deyişle gözlem değeri kullanılmayacağı için çıkartıyoruz.
+x <- model.matrix.default(medv~., train)[,-1] #Bağımlı değişkenimiz medv. Diğerleri bağımsız değişkenlerimiz. -1 ile medv value kolununu işlemden çıkartıyoruz. Diğer bir deyişle gözlem değeri kullanılmayacağı için çıkartıyoruz.
 #Response
 y <- train$medv
 ```
 
-Ridge Regresyonu bulabilmek için `àlpha=0` değeri olması gerekmektedir.
+Ridge Regresyonun amacı hata kareler  toplamını minimize eden katsayıları, bu katsayılara bir ceza uygulayarak bulmaktır. Ridge Regresyonu bulabilmek için `àlpha=0` değeri olması gerekmektedir. k-fold çapraz doğrulama yapması, bir çizim oluşturması ve lambda için bir değer döndürmesi için `glmnet` fonksiyonunu kullandık.
 
 ```{r}
-cv.r <- cv.glmnet(x, y, alpha = 0) #İdeal fonksiyonu ürettik
-cv.r$lambda.min
+cv.r <- cv.glmnet(x, y, alpha = 0) #İdeal fonksiyonu ürettik. Cross validation fonksiyonu ile lambda'nın minimum değeri bulduk
+cv.r$lambda.min 
 model.ridge <- glmnet(x, y, alpha=0, lambda =  cv.r$lambda.min)
 coef(model.ridge) #`coef` komutu ile coeffecient kat sayılarıana baktık
 
@@ -516,27 +510,27 @@ predictions.ridge <- model.ridge %>% predict(x.test.ridge) %>% as.vector() #Mode
 data.frame( RMSE.r = RMSE(predictions.ridge, test$medv), Rsquare.r = R2(predictions.ridge, test$medv)) #Predictions ridge yani tahmini ridge değerlerini bulduk
 ```
 
-Lasso Regresyonunu bulabilmek için `àlpha=1` değeri olması gerekmektedir.
+Lasso Regresyonu ürettiği modelin tahmin doğruluğunu ve  yorumlanabilirliğini arttırmak için hem değişken seçimi hem de regularization  yapmaktadır. Aynı ridge regresyonda olduğu gibi amaç hata kareler toplamını minimize eden  katsayıları, katsayılara ceza uygularayarak bulmaktır. Fakat ridge regresyondan farklı olarak ilgisiz  değişkenlerin katsayılarını sıfıra eşitlemektedir.  Lasso Regresyonunu bulabilmek için `àlpha=1` değeri olması gerekmektedir. k-fold çapraz doğrulama yapması, bir çizim oluşturması ve lambda için bir değer döndürmesi için `glmnet` fonksiyonunu kullandık.
 
 ```{r}
-cv.l <- cv.glmnet(x, y, alpha=1) #İdeal fonksiyonu ürettik
+cv.l <- cv.glmnet(x, y, alpha=1) #İdeal fonksiyonu ürettik. Cross validation fonksiyonu ile lambda'nın minimum değeri bulduk
 cv.l$lambda.min
 model.lasso <- glmnet(x, y, alpha=1, lambda =  cv.l$lambda.min)
 coef(model.lasso) #`coef` komutu ile coeffecient kat sayılarıana baktık
 
-x.test.lasso <- model.matrix(medv~., test)[,-1] #Modelimiz ile ridge'e atadık 
+x.test.lasso <- model.matrix(medv~., test)[,-1] #Modelimiz ile lasso'ya  atadık 
 predictions.lasso <- model.lasso %>% predict(x.test.lasso) %>% as.vector() #Modelin predict değerini aldık ve vektör olarak yazdırdık 
 data.frame( RMSE.l = RMSE(predictions.lasso, test$medv), Rsquare.l = R2(predictions.lasso, test$medv)) #Predictions lasso yani tahmini lasso değerlerini bulduk
 ```
 
-Elastic Net Regresyonu bulabilmek için;
+Elastik Net Regresyonu, Lasso ve Ridge  Regresyonlarının güçlü yönlerini birleştirerek, düzenlileştirilmiş değişkenlerle  ilişkili parametreleri gruplandırıp küçülterek onları denklemde bırakmakta veya hepsini bir kerede kaldırmaktadır. Elastic Net Regresyonu bulabilmek için;
 
 ```{r}
 model.net <- train(medv~., data = train, method ="glmnet", trControl = trainControl("cv", number=10), tuneLength=10)
 model.net$bestTune
 coef(model.net$finalModel, model.net$bestTune$lambda) #`coef` komutu ile coeffecient kat sayılarıana baktık
 
-x.test.net <- model.matrix(medv~., test)[,-1] #Modelimiz ile ridge'e atadık 
+x.test.net <- model.matrix(medv~., test)[,-1] #Modelimiz ile elastic'e atadık 
 predictions.net <- model.net %>% predict(x.test.net) #Modelin predict değerini aldık 
 data.frame(RMSE.net=RMSE(predictions.net, test$medv), Rsquare.net=R2(predictions.net, test$medv)) #Predictions elastic net yani tahmini elastic net değerlerini bulduk
 ```
@@ -553,8 +547,8 @@ model1 = glm(y~x1+x2, family = "binomial", data = dataset)
 summary(model1) #model1'in özetini kontrol ettik
 
 #Modelimizi test ettik.
-ll.null = model1$null.deviance/-2
-ll.proposed = model1$deviance/-2
+ll.null = model1$null.deviance/-2 #ll.null fonksiyonu en kötü haliyle tahmin yapılırsa oluşacak sonuçları göstermektedir.
+ll.proposed = model1$deviance/-2 #ll.proposed fonksiyonu ise en iyi tahmini veren denklemin sigmoidini göstermektedir.
 
 R2 = (ll.null - ll.proposed)/ ll.null #Hataların toplamını yani en uygun durumu ifade eder.
 
@@ -563,7 +557,7 @@ R2 = (ll.null - ll.proposed)/ ll.null #Hataların toplamını yani en uygun duru
 tahmin = predict(model1, type = "response")
 classification = round(tahmin)
 
-AR  = mean(dataset$y == classification)
+AR  = mean(dataset$y == classification) #AR fonksiyonu ile doğrulama yaptık.
 
 #Geleneksel model ile tahmin modelimizi bulduk.
 
@@ -577,16 +571,16 @@ dataset$Spam = as.factor(dataset$Spam)
 str(dataset) #dataset'in yapısına baktık
 
 set.seed(1453) #Rastgele fakat sabit verimizi `set.seed` komutu ile oluşturduk.
-trainingRowIndex = sample(1:nrow(dataset), 0,8*nrow(dataset))
+trainingRowIndex = sample(1:nrow(dataset), 0,8*nrow(dataset)) #nrow satır sayısını ifade etmektedir. Veri setinin yüzde seksenini alarak 1den nrowa kadar indisler oluşturduk.
 train = dataset[trainingRowIndex,2:5] #Record kolonu hariç diğer kolanları aldık
-test = dataset[-trainingRowIndex, 2:5] #training_index değerleri dışındaki değerleri aldık.
+test = dataset[-trainingRowIndex,2:5] #training_index değerleri dışındaki değerleri aldık.
 
 model2 = glm(Spam~., family = "binomial", data = train)
 summary(model2) #model1'in özetini kontrol ettik
 
 #Modelimizi test ettik.
-ll.null = model2$null.deviance/-2
-ll.proposed = model2$deviance/-2
+ll.null = model2$null.deviance/-2 #ll.null fonksiyonu en kötü haliyle tahmin yapılırsa oluşacak sonuçları göstermektedir.
+ll.proposed = model2$deviance/-2 #ll.proposed fonksiyonu ise en iyi tahmini veren denklemin sigmoidini göstermektedir. 
 
 #Hataların toplamını yani en uygun durumu ifade eder.
 R2 = (ll.null - ll.proposed)/ ll.null
